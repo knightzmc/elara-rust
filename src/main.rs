@@ -1,7 +1,6 @@
-use std::convert::TryInto;
+use std::sync::mpsc::*;
 use std::sync::mpsc::channel;
 
-use std::sync::mpsc::*;
 use crate::lexer::Lexer;
 
 mod lexer;
