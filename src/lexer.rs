@@ -1,5 +1,7 @@
 use std::sync::mpsc::Sender;
 
+use crate::lexer::Token::{Identifier, Let};
+
 pub struct Lexer<'a> {
     input: &'a str,
     pos: usize,
@@ -46,6 +48,14 @@ impl<'a> Lexer<'a> {
             Some(c)
         }
     }
+
+    fn emit(&mut self, token: Token<'a>) {
+        println!("Sending token on channel: {:?}", token);
+        self.token_sender
+            .send(token)
+            .expect("Unable to send token");
+    }
+
     fn determine_token(l: &mut Lexer) -> Option<StateFunction> {
         while let Some(c) = l.next() {
             if Lexer::is_white_space(c) {
@@ -53,19 +63,30 @@ impl<'a> Lexer<'a> {
                 continue;
             }
             if c == 'l' {
-                //TODO
+                return Some(StateFunction(Lexer::lex_let_or_identifier));
             }
-
-
-            println!("{:?}", c.to_string());
         }
         return None;
     }
 
-    fn lex_let_or_identifier(&mut self) {
+    fn lex_let_or_identifier(&mut self) -> Option<StateFunction> {
+        let mut s = "";
+        while let Some(c) = self.next() {
+            if Lexer::is_white_space(c) {
+                break;
+            }
+            s + c;
+        }
+        let token = if s == "let" {
+            Let(self.pos)
+        } else {
+            Identifier(s, self.pos)
+        };
 
+        self.emit(token);
+        return Some(StateFunction(Lexer::determine_token));
     }
-    fn is_white_space(c: char) -> bool {
+    fn is_white_space(ch: char) -> bool {
         ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r'
     }
 }
